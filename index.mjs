@@ -1,7 +1,7 @@
 // index.mjs
 import baileys from '@whiskeysockets/baileys';
 import pino from 'pino';
-import qrcode from 'qrcode';
+import qrcodeTerminal from 'qrcode-terminal'; // <-- Se cambió esta línea
 import { readdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -195,15 +195,8 @@ const iniciarConexion = async () => {
     sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
         if (qr) {
             console.log('\nEscanea este QR con WhatsApp:');
-            const qrDataUrl = await new Promise((resolve, reject) => {
-                qrcode.toDataURL(qr, (err, url) => {
-                    if (err) return reject(err);
-                    resolve(url);
-                });
-            });
-
-            const clickableLink = `https://chart.googleapis.com/chart?cht=qr&chs=500x500&chl=${encodeURIComponent(qr)}`;
-            console.log(`🔗 Enlace para escanear QR: ${clickableLink}`);
+            // Muestra el QR directamente en la terminal
+            qrcodeTerminal.generate(qr, { small: true }); // <-- Se cambió esta línea
         }
 
         if (connection === 'close') {
