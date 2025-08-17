@@ -1,14 +1,14 @@
 // index.mjs
 import baileys from '@whiskeysockets/baileys';
 import pino from 'pino';
-import qrcode from 'qrcode'; // Nota: Ahora importamos 'qrcode' sin '-terminal'
+import qrcode from 'qrcode';
 import { readdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Boom } from '@hapi/boom';
 import fs from 'fs';
-import { execSync } from 'child_process';
-import readline from 'readline';
+// Reemplaza 'child_process' y 'readline' con 'youtube-dl-exec'
+import { exec } from 'youtube-dl-exec';
 
 // Importa las funciones de manejo de eventos de bienvenida y despedida
 import { manejarGrupoUpdate } from './comandos/bienvenida.js';
@@ -31,7 +31,6 @@ if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
 const comandos = new Map();
 const dbPath = path.join(__dirname, 'economia.json');
-// Ruta al archivo matrimonio.json dentro de la carpeta 'database'
 const matrimonioPath = path.join(__dirname, 'database', 'matrimonio.json');
 
 let economiaGlobal = {};
@@ -194,7 +193,6 @@ const iniciarConexion = async () => {
     socketGlobal = sock;
 
     sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
-        // --- LÓGICA DE QR ACTUALIZADA ---
         if (qr) {
             console.log('\nEscanea este QR con WhatsApp:');
             const qrDataUrl = await new Promise((resolve, reject) => {
@@ -207,7 +205,6 @@ const iniciarConexion = async () => {
             const clickableLink = `https://chart.googleapis.com/chart?cht=qr&chs=500x500&chl=${encodeURIComponent(qr)}`;
             console.log(`🔗 Enlace para escanear QR: ${clickableLink}`);
         }
-        // --- FIN DE LA LÓGICA DE QR ACTUALIZADA ---
 
         if (connection === 'close') {
             const code = lastDisconnect?.error?.output?.statusCode;
@@ -418,47 +415,9 @@ process.on('unhandledRejection', err => {
     marcarCambiosParaGuardar();
 });
 
-const verificarYtDlp = () => {
-    try {
-        execSync('yt-dlp --version', { stdio: 'ignore' });
-        return true;
-    } catch {
-        return false;
-    }
-};
-
-const instalarYtDlp = () => {
-    return new Promise((resolve) => {
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        rl.question('⚠️ yt-dlp no está instalado. ¿Quieres instalarlo ahora? (s/n): ', (respuesta) => {
-            rl.close();
-            if (respuesta.trim().toLowerCase() === 's') {
-                try {
-                    console.log('Instalando yt-dlp globalmente. Esto puede tardar unos minutos...');
-                    execSync('pip install yt-dlp', { stdio: 'inherit' });
-                    console.log('✅ yt-dlp instalado con éxito.\n');
-                    resolve(true);
-                } catch (e) {
-                    console.error('❌ Error al instalar yt-dlp con pip:', e.message);
-                    console.log('Intentando con npm (requiere yt-dlp-npm):');
-                    try {
-                        execSync('npm install -g yt-dlp-npm', { stdio: 'inherit' });
-                        console.log('✅ yt-dlp-npm (wrapper) instalado con éxito.\n');
-                        resolve(true);
-                    } catch (npmError) {
-                        console.error('❌ Error al instalar yt-dlp con npm:', npmError.message);
-                        console.log('Asegúrate de tener Python y pip instalados, o npm (Node.js) y permisos para la instalación global.');
-                        resolve(false);
-                    }
-                }
-            } else {
-                console.warn('\n❌ No se instaló yt-dlp. El comando $play no funcionará sin él.\n');
-                resolve(false);
-            }
-        });
-    });
-};
-
+// REMOVED: Funciones de verificacion e instalacion manual de yt-dlp
+// const verificarYtDlp = () => { ... }
+// const instalarYtDlp = () => { ... }
 const main = async () => {
     const databaseDir = path.join(__dirname, 'database');
     if (!fs.existsSync(databaseDir)) {
@@ -466,11 +425,7 @@ const main = async () => {
         console.log(`Directorio 'database' creado en: ${databaseDir}`);
     }
 
-    const ytDlpOK = verificarYtDlp();
-    if (!ytDlpOK) {
-        const continuar = await instalarYtDlp();
-        if (!continuar) return;
-    }
+    // REMOVED: Llamadas a verificarYtDlp y instalarYtDlp
     await iniciarConexion();
 };
 
