@@ -132,9 +132,6 @@ export default async (sock, m) => {
 𝆹𝅥  ְ  $8ball 
 > – La Esfera 8 responde a tus incertidumbres.
 
-𝆹𝅥  ְ  $play + nombre_de_canción 
-> – Para poner canciones. 
-
 𝆹𝅥  ְ  $sticker + respuesta a una imagen
 > – Transforma las imágenes en stickers. 
 

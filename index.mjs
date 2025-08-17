@@ -7,8 +7,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Boom } from '@hapi/boom';
 import fs from 'fs';
-// Reemplaza 'child_process' y 'readline' con 'youtube-dl-exec'
-import { exec } from 'youtube-dl-exec';
+import { execSync } from 'child_process';
+import readline from 'readline';
 
 // Importa las funciones de manejo de eventos de bienvenida y despedida
 import { manejarGrupoUpdate } from './comandos/bienvenida.js';
@@ -415,9 +415,7 @@ process.on('unhandledRejection', err => {
     marcarCambiosParaGuardar();
 });
 
-// REMOVED: Funciones de verificacion e instalacion manual de yt-dlp
-// const verificarYtDlp = () => { ... }
-// const instalarYtDlp = () => { ... }
+
 const main = async () => {
     const databaseDir = path.join(__dirname, 'database');
     if (!fs.existsSync(databaseDir)) {
@@ -425,7 +423,6 @@ const main = async () => {
         console.log(`Directorio 'database' creado en: ${databaseDir}`);
     }
 
-    // REMOVED: Llamadas a verificarYtDlp y instalarYtDlp
     await iniciarConexion();
 };
 
