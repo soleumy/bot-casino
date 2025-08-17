@@ -1,0 +1,15 @@
+function inicializarUsuario(db, userId) {
+  if (!db[userId]) {
+    db[userId] = {
+      dinero: 0,
+      banco: 0,
+      inventario: [],
+      estados: {}
+    };
+  } else {
+    db[userId].dinero ??= 0;
+    db[userId].banco ??= 0;
+    db[userId].inventario ??= [];
+    db[userId].estados ??= {};
+  }
+}
