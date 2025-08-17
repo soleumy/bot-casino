@@ -1,7 +1,7 @@
 // index.mjs
 import baileys from '@whiskeysockets/baileys';
 import pino from 'pino';
-import qrcodeTerminal from 'qrcode-terminal'; // <-- Se cambió esta línea
+import qrcodeTerminal from 'qrcode-terminal'; // Se cambió esta línea
 import { readdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -196,7 +196,7 @@ const iniciarConexion = async () => {
         if (qr) {
             console.log('\nEscanea este QR con WhatsApp:');
             // Muestra el QR directamente en la terminal
-            qrcodeTerminal.generate(qr, { small: true }); // <-- Se cambió esta línea
+            qrcodeTerminal.generate(qr, { small: true });
         }
 
         if (connection === 'close') {
