@@ -1,7 +1,7 @@
 // index.mjs
 import baileys from '@whiskeysockets/baileys';
 import pino from 'pino';
-import qrcode from 'qrcode-terminal';
+import qrcode from 'qrcode'; // Nota: Ahora importamos 'qrcode' sin '-terminal'
 import { readdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -180,9 +180,6 @@ const iniciarConexion = async () => {
     economiaGlobal = await cargarJsonSeguro(dbPath, {});
     matrimoniosGlobal = await cargarJsonSeguro(matrimonioPath, {});
     console.log('✅ Bases de datos de economía y matrimonios cargadas.');
-    // AÑADE ESTO para depuración
-    console.log('DEBUG (index.mjs): Contenido de matrimoniosGlobal al iniciar:', JSON.stringify(matrimoniosGlobal, null, 2));
-
 
     const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, 'auth'));
     const { version } = await fetchLatestBaileysVersion();
@@ -196,11 +193,21 @@ const iniciarConexion = async () => {
 
     socketGlobal = sock;
 
-    sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
+    sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
+        // --- LÓGICA DE QR ACTUALIZADA ---
         if (qr) {
-            console.log('\n📱 Escanea este QR con WhatsApp:\n');
-            qrcode.generate(qr, { small: true });
+            console.log('\nEscanea este QR con WhatsApp:');
+            const qrDataUrl = await new Promise((resolve, reject) => {
+                qrcode.toDataURL(qr, (err, url) => {
+                    if (err) return reject(err);
+                    resolve(url);
+                });
+            });
+
+            const clickableLink = `https://chart.googleapis.com/chart?cht=qr&chs=500x500&chl=${encodeURIComponent(qr)}`;
+            console.log(`🔗 Enlace para escanear QR: ${clickableLink}`);
         }
+        // --- FIN DE LA LÓGICA DE QR ACTUALIZADA ---
 
         if (connection === 'close') {
             const code = lastDisconnect?.error?.output?.statusCode;
@@ -278,7 +285,6 @@ const iniciarConexion = async () => {
         }
 
         console.log('\n--- Comando Recibido ---');
-        console.log('Objeto m (parcial):', { key: m.key, message: m.message });
         console.log(`Chat JID: ${jid}`);
         console.log(`Remitente JID: ${remitente}`);
         console.log(`Texto del mensaje: "${text}"`);
@@ -288,25 +294,17 @@ const iniciarConexion = async () => {
         const [cmdRaw, ...args] = text.trim().split(/\s+/);
         const cmd = cmdRaw.slice(1).toLowerCase();
 
-        // Comandos que siempre funcionan, independientemente del estado 'activo' del bot
-        // Incluye "desactivar" para que siempre sea accesible.
         const alwaysActiveCommands = ['activar', 'desactivar', 'help', 'ayuda'];
 
         const user = obtenerDatosDelChat(jid, remitente, isGroup);
         const chatConfig = economiaGlobal[jid]?.config || {};
 
-        // === LÓGICA PARA EL ESTADO ACTIVO DEL BOT ===
-        // Si el bot está en un grupo, está inactivo (chatConfig.activo === false)
-        // Y el comando NO es uno de los comandos que siempre deben funcionar,
-        // entonces el bot no procesa el comando y envía un mensaje.
         if (isGroup && chatConfig.activo === false && !alwaysActiveCommands.includes(cmd)) {
             console.log(`⛔ Bot desactivado en el grupo ${jid}. Comando $${cmd} ignorado.`);
             await sock.sendMessage(jid, { text: `🔒 El bot está desactivado en este grupo. Usa *$activar* para reactivarlo.` });
-            return; // Detiene el procesamiento si el bot está inactivo y el comando no está permitido
+            return;
         }
-        // === FIN DE LA LÓGICA ===
 
-        // Anti-link logic (can be placed before or after active check, depending on desired behavior)
         if (isGroup && !isBot && chatConfig.antilinkEnabled) {
             let groupMetadata, botIsAdmin = false;
             try {
@@ -331,8 +329,7 @@ const iniciarConexion = async () => {
                 }
             }
         }
-        
-        // Ahora, obtén la entrada del comando después de todas las comprobaciones previas
+
         const commandEntry = comandos.get(cmd);
 
         console.log(`Comando extraído (raw): "${cmdRaw}"`);
@@ -353,7 +350,7 @@ const iniciarConexion = async () => {
                 user: user,
                 remitente,
                 jid,
-                matrimonies: matrimoniosGlobal, // Se pasa el objeto global de matrimonios
+                matrimonies: matrimoniosGlobal,
                 guardarEconomia: marcarCambiosParaGuardar,
                 guardarMatrimonios: marcarCambiosParaGuardar,
                 obtenerDatosDelChat: obtenerDatosDelChat,
@@ -363,8 +360,7 @@ const iniciarConexion = async () => {
                 groupAdmins: [],
                 groupMembers: [],
                 botIsAdmin: false,
-                // Asegurar que mentionedJids siempre sea un array para evitar errores .map()
-                mentionedJids: m.message?.extendedTextMessage?.contextInfo?.mentionedJid?.map(jidNormalizedUser) || [], 
+                mentionedJids: m.message?.extendedTextMessage?.contextInfo?.mentionedJid?.map(jidNormalizedUser) || [],
             };
 
             const commandConfig = commandEntry.config || {};
@@ -391,8 +387,8 @@ const iniciarConexion = async () => {
                 }));
 
                 extra.groupAdmins = extra.groupMembers
-                                        .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
-                                        .map(p => p.id);
+                                             .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
+                                             .map(p => p.id);
                 
                 extra.botIsAdmin = extra.groupAdmins.includes(botJid);
                 console.log(`Comando $${cmd}: Necesita metadata. Bot es admin? ${extra.botIsAdmin}`);
